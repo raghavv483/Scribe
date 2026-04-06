@@ -1,39 +1,46 @@
-'use client'
+"use client"
 
-import { useSearchParams, useRouter } from "next/navigation"
-import { trpc } from "../_trpc/client"
-import { useEffect, useState } from "react"
+import { trpc } from '@/app/_trpc/client'
+import { Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
 
 const Page = () => {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const [data, setData] = useState<string | null>(null)
-    const [loading, setLoading] = useState(true)
+    const origin = searchParams.get('origin')
+
+    const { data, isLoading, error } = trpc.authCallback.useQuery(undefined, {
+        retry: true,
+        retryDelay: 500,
+    })
 
     useEffect(() => {
-        const origin = searchParams.get('origin')
-        
-        const fetchData = async () => {
-            try {
-                const result = await trpc.test.query()
-                setData(result)
-            } catch (error) {
-                console.error('Error:', error)
-            } finally {
-                setLoading(false)
-            }
+        if (data?.success) {
+            router.push(origin ? `/${origin}` : '/dashboard')
         }
-        
-        fetchData()
-    }, [searchParams])
+    }, [data])
 
-    if (loading) return <div>Loading...</div>
+    useEffect(() => {
+        if (error?.data?.code === 'UNAUTHORIZED') {
+            router.push('/sign-in')
+        }
+    }, [error])
+
+    if (isLoading) return <div>Setting up your account...</div>
 
     return (
-        <div>
-            <p>Data: {data}</p>
-        </div>
-    )
+    <div className='w-full mt-24 flex justify-center'>
+      <div className='flex flex-col items-center gap-2'>
+        <Loader2 className='h-8 w-8 animate-spin text-zinc-800' />
+        <h3 className='font-semibold text-xl'>
+          Setting up your account...
+        </h3>
+        <p>You will be redirected automatically.</p>
+      </div>
+    </div>
+  )
 }
 
 export default Page

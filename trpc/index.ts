@@ -1,10 +1,15 @@
-import { publicProcedure, router } from './trpc';
+import { initTRPC } from '@trpc/server';
  
-export const appRouter = router({
-  // ...
-  test : publicProcedure.query(() => {
-    return 'Hello world';
-  }),
-});
+/**
+ * Initialization of tRPC backend
+ * Should be done only once per backend!
+ */
+const t = initTRPC.create();
  
-export type AppRouter = typeof appRouter;
+/**
+ * Export reusable router and procedure helpers
+ * that can be used throughout the router
+ */
+export const router = t.router;
+export const publicProcedure = t.procedure;
+export type { AppRouter } from './trpc'
