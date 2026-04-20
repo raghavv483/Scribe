@@ -1,14 +1,27 @@
 "use client"
 import { trpc } from "@/app/_trpc/client";
 import UploadButton from "./UploadButton";
-import { Ghost, MessageSquare, Plus, Trash } from "lucide-react";
+import { Ghost, Loader2, MessageSquare, Plus, Trash } from "lucide-react";
 import Skeleton from "react-loading-skeleton";
 import Link from "next/link";
-import format from "date-fns/format";
+import {format} from "date-fns/format";
 import { Button } from "./ui/button";
+import { useState } from "react";
 const Dashboard = () => {
+    const [currentlyDeletingFile, setcurrentlyDeletingFile] = useState<string | null>(null)
+    const utils = trpc.useContext()
     const { data: files, isLoading } = trpc.getUserFiles.useQuery()
-
+    const {mutate: deleteFile} = trpc.deleteFile.useMutation({
+        onSuccess: () => {
+            utils.getUserFiles.invalidate()
+        },
+        onMutate: ({id}) => {
+            setcurrentlyDeletingFile(id)
+        },
+        onSettled: () => {
+            setcurrentlyDeletingFile(null) 
+        } 
+    })
     return (
         <main className="ms-auto max-w-7xl mdp-10">
             <div className='mt-8 flex flex-col items-start justify-between gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:gap-0'>
@@ -44,7 +57,7 @@ const Dashboard = () => {
                                     <div>
                                     <MessageSquare className="h-4 w-4"></MessageSquare>chat
                                 </div>
-                                <Button variant={'destructive'} size ='sm' className="w-full"><Trash className="h-4 w-4"></Trash></Button>
+                                <Button onClick={()=>deleteFile({id:file.id})} variant={'destructive'} size ='sm' className="w-full">{currentlyDeletingFile===file.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash className="h-4 w-4"/>}</Button>
                                 </div>
                                 
                             </li>
